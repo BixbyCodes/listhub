@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: #0d0d0d;
+    color: #ffffff;
+    font-family: "DM Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+  ::selection { background: rgba(129,140,248,0.25); }
+}
+
+@layer components {
+  .input {
+    @apply w-full px-4 py-3 rounded-xl text-sm text-white placeholder-ink-4
+           bg-surface-2 border border-brd
+           focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20
+           transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-2.5 rounded-xl text-sm font-medium text-white
+           bg-accent hover:bg-accent/90
+           shadow-lg shadow-accent/20
+           transition-all duration-200
+           hover:scale-[1.02] active:scale-[0.98]
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-2.5 rounded-xl text-sm font-medium
+           bg-surface-3 border border-brd text-ink-2
+           hover:border-brd-bright hover:text-white
+           transition-all duration-200
+           hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .card {
+    @apply bg-surface-1 border border-brd rounded-2xl;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300
+           hover:border-brd-bright hover:bg-surface-2
+           hover:shadow-2xl hover:shadow-black/50;
+  }
+
+  .label {
+    @apply block text-xs font-mono font-medium text-ink-3 uppercase tracking-wider mb-2;
+  }
+
+  .badge {
+    @apply text-xs font-mono px-2.5 py-0.5 rounded-full border;
+  }
+
+  /* staggered fade-up for lists */
+  .stagger > *:nth-child(1) { animation: fadeUp 0.4s 0.05s ease both; }
+  .stagger > *:nth-child(2) { animation: fadeUp 0.4s 0.10s ease both; }
+  .stagger > *:nth-child(3) { animation: fadeUp 0.4s 0.15s ease both; }
+  .stagger > *:nth-child(4) { animation: fadeUp 0.4s 0.20s ease both; }
+  .stagger > *:nth-child(5) { animation: fadeUp 0.4s 0.25s ease both; }
+  .stagger > *:nth-child(6) { animation: fadeUp 0.4s 0.30s ease both; }
+  .stagger > *:nth-child(7) { animation: fadeUp 0.4s 0.35s ease both; }
+  .stagger > *:nth-child(8) { animation: fadeUp 0.4s 0.40s ease both; }
+  .stagger > *:nth-child(9) { animation: fadeUp 0.4s 0.45s ease both; }
+  .stagger > *:nth-child(10){ animation: fadeUp 0.4s 0.50s ease both; }
+}
