@@ -11,7 +11,7 @@ const getListings = async (req, res) => {
     if (category && category !== "All") filter.category = category;
     if (search) filter.$or = [{ title: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }];
 
-    let listings, total;
+    let listings;
     if (sort === "votes") {
       listings = await Listing.aggregate([
         { $match: filter },
@@ -26,9 +26,22 @@ const getListings = async (req, res) => {
       listings = (await Listing.find(filter).sort({ createdAt: -1 }).skip(skip).limit(PAGE_SIZE).populate("creator", "username").lean())
         .map((l) => ({ ...l, voteCount: l.votes.length }));
     }
-    total = await Listing.countDocuments(filter);
+    const total = await Listing.countDocuments(filter);
     res.json({ listings, pagination: { total, page: pageNum, pages: Math.ceil(total / PAGE_SIZE) } });
   } catch (e) { res.status(500).json({ message: "Failed to fetch listings" }); }
+};
+
+// GET single listing by ID
+const getListing = async (req, res) => {
+  try {
+    const listing = await Listing.findById(req.params.id)
+      .populate("creator", "username avatar")
+      .lean();
+    if (!listing) return res.status(404).json({ message: "Listing not found" });
+    res.json({ listing: { ...listing, voteCount: listing.votes.length } });
+  } catch (e) {
+    res.status(500).json({ message: "Failed to fetch listing" });
+  }
 };
 
 const createListing = async (req, res) => {
@@ -54,4 +67,4 @@ const voteListing = async (req, res) => {
   } catch (e) { res.status(500).json({ message: "Failed to vote" }); }
 };
 
-module.exports = { getListings, createListing, voteListing };
+module.exports = { getListings, getListing, createListing, voteListing };

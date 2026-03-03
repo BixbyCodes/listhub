@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api",
-  timeout: 60000,
+  baseURL: "/api",
+  timeout: 10000,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -15,7 +15,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    err.message = err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || err.message || "Something went wrong";
+    err.message =
+      err.response?.data?.message ||
+      err.response?.data?.errors?.[0]?.msg ||
+      err.message ||
+      "Something went wrong";
     return Promise.reject(err);
   }
 );

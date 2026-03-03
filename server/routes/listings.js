@@ -1,12 +1,13 @@
 const express = require("express");
 const { body } = require("express-validator");
-const { getListings, createListing, voteListing } = require("../controllers/listingController");
+const { getListings, getListing, createListing, voteListing } = require("../controllers/listingController");
 const { protect } = require("../middleware/auth");
 const { CATEGORIES } = require("../models/Listing");
 
 const router = express.Router();
 
-router.get("/", getListings);
+router.get("/",     getListings);
+router.get("/:id",  getListing);   // ← NEW: single listing
 
 router.post("/", protect, [
   body("title").trim().isLength({ min: 3, max: 100 }),

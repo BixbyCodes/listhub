@@ -1,5 +1,5 @@
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const CAT_STYLES = {
   Gaming:       "border-purple-500/30 text-purple-400 bg-purple-500/10",
@@ -36,18 +36,21 @@ export default function ListingCard({ listing, onVote, votingId }) {
             } ${isVoting ? "opacity-50 cursor-wait" : "cursor-pointer active:scale-95"}`}
         >
           <svg className="w-3.5 h-3.5" fill={hasVoted ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7"/>
           </svg>
         </button>
         <span className={`text-xs font-mono font-bold ${hasVoted ? "text-accent" : "text-ink-3"}`}>{count}</span>
       </div>
 
-      {/* Content */}
+      {/* Content — clicking title goes to detail page */}
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-1.5">
-          <h3 className="font-display font-semibold text-white text-base group-hover:text-accent transition-colors">
+          <Link
+            to={`/listings/${listing._id}`}
+            className="font-display font-semibold text-white text-base group-hover:text-accent transition-colors hover:underline"
+          >
             {listing.title}
-          </h3>
+          </Link>
           <span className={`badge border ${catCls}`}>{listing.category}</span>
         </div>
 
@@ -66,6 +69,13 @@ export default function ListingCard({ listing, onVote, votingId }) {
             </span>
           )}
           <span className="font-mono">{new Date(listing.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+          {/* Click to view comments */}
+          <Link to={`/listings/${listing._id}`} className="flex items-center gap-1 text-ink-4 hover:text-accent transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            Comments
+          </Link>
         </div>
       </div>
     </div>
