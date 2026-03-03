@@ -27,8 +27,8 @@ export default function Listings() {
     try {
       const params = new URLSearchParams({ page, sort, ...(category !== "All" && { category }), ...(debSearch && { search: debSearch }) });
       const { data } = await api.get(`/listings?${params}`);
-      setListings(data.listings);
-      setPagination(data.pagination);
+      setListings(data.listings || []);
+      setPagination(data.pagination || { total: 0, page: 1, pages: 1 });
     } catch { setError("Failed to load listings."); }
     finally { setLoading(false); }
   }, [page, sort, category, debSearch]);
@@ -59,7 +59,7 @@ export default function Listings() {
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-mono text-ink-4 border border-brd px-3 py-1.5 rounded-full mb-3">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse-slow" />
-            {pagination.total} listing{pagination.total !== 1 ? "s" : ""}
+            {pagination?.total ?? 0} listing{pagination.total !== 1 ? "s" : ""}
           </div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl text-white">Browse Listings</h1>
         </div>
@@ -125,7 +125,7 @@ export default function Listings() {
       )}
 
       {/* Pagination */}
-      {pagination.pages > 1 && (
+      {pagination?.pages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-10">
           <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1} className="btn-ghost px-4 py-2 disabled:opacity-30">← Prev</button>
           <div className="flex gap-1">
