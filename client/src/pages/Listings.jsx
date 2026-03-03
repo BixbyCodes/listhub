@@ -19,21 +19,40 @@ export default function Listings() {
   const [votingId, setVotingId]     = useState(null);
   const [debSearch, setDebSearch]   = useState("");
 
-  useEffect(() => { const t = setTimeout(() => setDebSearch(search), 400); return () => clearTimeout(t); }, [search]);
+  useEffect(() => {
+    const t = setTimeout(() => setDebSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
   useEffect(() => { setPage(1); }, [debSearch, category, sort]);
 
-  const fetchListings = useCallback(async () => {
-    setLoading(true); setError("");
-    try {
-      const params = new URLSearchParams({ page, sort, ...(category !== "All" && { category }), ...(debSearch && { search: debSearch }) });
-      const { data } = await api.get(`/listings?${params}`);
-      setListings(data.listings || []);
-      setPagination(data.pagination || { total: 0, page: 1, pages: 1 });
-    } catch { setError("Failed to load listings."); }
-    finally { setLoading(false); }
+  const fetchListings = useCallback(() => {
+    // ✅ Fix #5: AbortController prevents stale responses from racing filters
+    const controller = new AbortController();
+
+    const run = async () => {
+      setLoading(true); setError("");
+      try {
+        const params = new URLSearchParams({
+          page, sort,
+          ...(category !== "All" && { category }),
+          ...(debSearch && { search: debSearch }),
+        });
+        const { data } = await api.get(`/listings?${params}`, { signal: controller.signal });
+        setListings(data.listings || []);
+        setPagination(data.pagination || { total: 0, page: 1, pages: 1 });
+      } catch (err) {
+        if (err.name !== "CanceledError") setError("Failed to load listings.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
+    return () => controller.abort(); // cleanup on dep change
   }, [page, sort, category, debSearch]);
 
-  useEffect(() => { fetchListings(); }, [fetchListings]);
+  useEffect(() => fetchListings(), [fetchListings]);
 
   const handleVote = async (id) => {
     if (!user) return;
@@ -44,12 +63,16 @@ export default function Listings() {
         if (l._id !== id) return l;
         const uid = user.id || user._id;
         const newVotes = data.voted
-          ? [...(l.votes||[]), uid]
-          : (l.votes||[]).filter(v => v !== uid && v?._id !== uid);
+          ? [...(l.votes || []), uid]
+          : (l.votes || []).filter(v => v !== uid && v?._id !== uid);
         return { ...l, votes: newVotes, voteCount: data.voteCount };
       }));
-    } catch (err) { alert(err.message); }
-    finally { setVotingId(null); }
+    } catch (err) {
+      // ✅ Fix #6: replaced alert() with state-based error message
+      setError(err.message);
+    } finally {
+      setVotingId(null);
+    }
   };
 
   return (
@@ -59,7 +82,8 @@ export default function Listings() {
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-mono text-ink-4 border border-brd px-3 py-1.5 rounded-full mb-3">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse-slow" />
-            {pagination?.total ?? 0} listing{pagination.total !== 1 ? "s" : ""}
+            {/* ✅ Fix #7: consistent optional chaining on pagination */}
+            {pagination?.total ?? 0} listing{pagination?.total !== 1 ? "s" : ""}
           </div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl text-white">Browse Listings</h1>
         </div>
@@ -69,7 +93,9 @@ export default function Listings() {
       {/* Search + sort */}
       <div className="card p-4 mb-5 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
           <input type="text" className="input pl-10" placeholder="Search listings…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select className="input sm:w-40" value={sort} onChange={e => setSort(e.target.value)} style={{ colorScheme: "dark" }}>
@@ -93,7 +119,7 @@ export default function Listings() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="card p-5 h-28" style={{ animation: `fadeIn 0.3s ${i*0.08}s ease both` }}>
+            <div key={i} className="card p-5 h-28" style={{ animation: `fadeIn 0.3s ${i * 0.08}s ease both` }}>
               <div className="flex gap-4 h-full animate-pulse">
                 <div className="w-10 h-10 rounded-xl bg-surface-3 shrink-0" />
                 <div className="flex-1 space-y-2 pt-1">
@@ -115,7 +141,7 @@ export default function Listings() {
           <div className="text-5xl mb-4 opacity-20 font-display">◈</div>
           <p className="font-display font-semibold text-ink-2 text-lg mb-1">No listings found</p>
           <p className="text-sm text-ink-4">
-            {user ? <><Link to="/create" className="text-accent underline">Create the first one</Link></> : "Try different filters."}
+            {user ? <Link to="/create" className="text-accent underline">Create the first one</Link> : "Try different filters."}
           </p>
         </div>
       ) : (
@@ -127,16 +153,18 @@ export default function Listings() {
       {/* Pagination */}
       {pagination?.pages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-10">
-          <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1} className="btn-ghost px-4 py-2 disabled:opacity-30">← Prev</button>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn-ghost px-4 py-2 disabled:opacity-30">← Prev</button>
           <div className="flex gap-1">
-            {Array.from({ length: pagination.pages }, (_, i) => i+1).filter(p => Math.abs(p-page) <= 2).map(p => (
-              <button key={p} onClick={() => setPage(p)}
-                className={`w-9 h-9 rounded-xl text-sm font-mono transition-all ${p===page ? "bg-accent text-white shadow-lg shadow-accent/25" : "bg-surface-3 border border-brd text-ink-3 hover:border-brd-bright"}`}>
-                {p}
-              </button>
-            ))}
+            {Array.from({ length: pagination.pages }, (_, i) => i + 1)
+              .filter(p => Math.abs(p - page) <= 2)
+              .map(p => (
+                <button key={p} onClick={() => setPage(p)}
+                  className={`w-9 h-9 rounded-xl text-sm font-mono transition-all ${p === page ? "bg-accent text-white shadow-lg shadow-accent/25" : "bg-surface-3 border border-brd text-ink-3 hover:border-brd-bright"}`}>
+                  {p}
+                </button>
+              ))}
           </div>
-          <button onClick={() => setPage(p => Math.min(pagination.pages,p+1))} disabled={page===pagination.pages} className="btn-ghost px-4 py-2 disabled:opacity-30">Next →</button>
+          <button onClick={() => setPage(p => Math.min(pagination?.pages, p + 1))} disabled={page === pagination?.pages} className="btn-ghost px-4 py-2 disabled:opacity-30">Next →</button>
         </div>
       )}
 

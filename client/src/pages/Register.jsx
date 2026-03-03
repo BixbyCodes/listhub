@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
-const BACKEND = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5001";
+// ✅ Fix #4: safely strip only a trailing /api from the URL
+const BACKEND =
+  import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "http://localhost:5001";
 
 function Field({ name, label, type = "text", placeholder, value, onChange, error }) {
   return (
@@ -39,11 +41,15 @@ export default function Register() {
 
   const validate = () => {
     const e = {};
-    if (form.username.trim().length < 3) e.username = "Min 3 characters";
-    if (!/^[a-zA-Z0-9_]+$/.test(form.username)) e.username = "Letters, numbers & underscores only";
-    if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email";
-    if (form.password.length < 6) e.password = "Min 6 characters";
-    if (form.password !== form.confirm) e.confirm = "Passwords don't match";
+    // ✅ Fix #3: use else-if so second check doesn't silently overwrite first
+    if (form.username.trim().length < 3) {
+      e.username = "Min 3 characters";
+    } else if (!/^[a-zA-Z0-9_]+$/.test(form.username)) {
+      e.username = "Letters, numbers & underscores only";
+    }
+    if (!/\S+@\S+\.\S+/.test(form.email))   e.email    = "Invalid email";
+    if (form.password.length < 6)            e.password = "Min 6 characters";
+    if (form.password !== form.confirm)      e.confirm  = "Passwords don't match";
     return e;
   };
 
@@ -56,7 +62,7 @@ export default function Register() {
     try {
       const { data } = await api.post("/auth/register", {
         username: form.username,
-        email: form.email,
+        email:    form.email,
         password: form.password,
       });
       loginUser(data.user, data.token);
@@ -84,7 +90,6 @@ export default function Register() {
         </div>
 
         <div className="card p-6">
-          {/* Google Sign Up button */}
           <button
             onClick={handleGoogle}
             type="button"
@@ -115,10 +120,10 @@ export default function Register() {
               </div>
             )}
 
-            <Field name="username" label="Username"         placeholder="cooluser_42"       value={form.username} onChange={onChange} error={errors.username} />
+            <Field name="username" label="Username"              placeholder="cooluser_42"       value={form.username} onChange={onChange} error={errors.username} />
             <Field name="email"    label="Email"    type="email"    placeholder="you@example.com"  value={form.email}    onChange={onChange} error={errors.email} />
             <Field name="password" label="Password" type="password" placeholder="Min 6 characters" value={form.password} onChange={onChange} error={errors.password} />
-            <Field name="confirm"  label="Confirm Password" type="password" placeholder="Repeat password" value={form.confirm}  onChange={onChange} error={errors.confirm} />
+            <Field name="confirm"  label="Confirm Password" type="password" placeholder="Repeat password" value={form.confirm} onChange={onChange} error={errors.confirm} />
 
             <button type="submit" className="btn-primary w-full py-3 mt-1" disabled={loading}>
               {loading ? (
