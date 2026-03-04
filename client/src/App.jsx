@@ -9,7 +9,8 @@ import Login           from "./pages/Login";
 import Register        from "./pages/Register";
 import CreateListing   from "./pages/CreateListing";
 import OAuthCallback   from "./pages/OAuthCallback";
-
+// Pre-warm Render backend as soon as app loads
+fetch(import.meta.env.VITE_API_URL?.replace("/api", "") + "/api/health").catch(() => {});
 export default function App() {
   return (
     <AuthProvider>
